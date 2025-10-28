@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIToolSystem", "DIToolSystem\DIToolSystem.csproj", "{E33602A1-F4CB-4DE2-A3DC-2686A3370921}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E33602A1-F4CB-4DE2-A3DC-2686A3370921}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E33602A1-F4CB-4DE2-A3DC-2686A3370921}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E33602A1-F4CB-4DE2-A3DC-2686A3370921}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E33602A1-F4CB-4DE2-A3DC-2686A3370921}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
