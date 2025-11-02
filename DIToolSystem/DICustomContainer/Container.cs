@@ -1,30 +1,29 @@
+using System.Collections.Concurrent;
+
 namespace DIToolSystem.DICustomContainer;
 
 public class Container : IContainer
 {
-    private readonly Dictionary<Type, Type> _registrations = new();
-    
-    public void Register<TInterface, TImplementation>()
+    private readonly ConcurrentDictionary<Type, Registration> _registrations = new();
+
+    public IContainer Register<TInterface, TImplementation>() where TInterface : class where TImplementation : class, TInterface
     {
-        _registrations[typeof(TInterface)] = typeof(TImplementation);
+        var registration = new Registration(typeof(TInterface), typeof(TImplementation));
+        _registrations.AddOrUpdate(typeof(TInterface), registration, (_, _) => registration);
+        return this;
     }
 
-    public TInterface Resolve<TInterface>()
+    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory) where TInterface : class
     {
-        return (TInterface)Resolve(typeof(TInterface));
+        var registration = new Registration(typeof(TInterface), factory);
+        _registrations.AddOrUpdate(typeof(TInterface), registration, (_, _) => registration);
+        return this;
     }
-    
-    private object Resolve(Type type)
+
+    public IContainer Register<TImplementation>() where TImplementation : class
     {
-        if (!_registrations.TryGetValue(type, out var implementationType))
-            throw new Exception($"Type {type.Name} not registered");
-
-        var constructor = implementationType.GetConstructors().First();
-        var parameters = constructor.GetParameters()
-            .Select(p => Resolve(p.ParameterType))
-            .ToArray();
-
-        return Activator.CreateInstance(implementationType, parameters)!;
+        var registration = new Registration(typeof(TImplementation), typeof(TImplementation));
+        _registrations.AddOrUpdate(typeof(TImplementation), registration, (_, _) => registration);
+        return this;
     }
-    
 }
