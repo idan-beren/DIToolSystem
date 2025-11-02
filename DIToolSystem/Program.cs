@@ -1,3 +1,7 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using DIToolSystem.DICustomContainer;
+using DIToolSystem.Tools;
 
-Console.WriteLine("Hello, World!");
+var container = new Container();
+container.Register<ITool, HelloWorldTool>();
+var tool = container.Resolve<ITool>();
+tool.Execute();

@@ -1,6 +1,6 @@
 namespace DIToolSystem.DICustomContainer;
 
-public class Container
+public class Container : IContainer
 {
     private readonly Dictionary<Type, Type> _registrations = new();
     
