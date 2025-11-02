@@ -6,6 +6,6 @@ public class HelloWorldTool : ITool
     
     public void Execute()
     {
-        Console.WriteLine("Hello World!");
+        Console.WriteLine("Hello-World!");
     }
 }
