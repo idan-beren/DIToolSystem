@@ -29,23 +29,4 @@ public class Registration
         Lifetime = lifetime;
         Instance = null;
     }
-    
-    public static Registration Transient<TService>(Func<IContainer, TService> factory)
-        where TService : class
-    {
-        return new Registration(typeof(TService), factory, ServiceLifetime.Transient);
-    }
-    
-    public static Registration Singleton<TService, TImplementation>()
-        where TService : class
-        where TImplementation : class, TService
-    {
-        return new Registration(typeof(TService), typeof(TImplementation), ServiceLifetime.Singleton);
-    }
-    
-    public static Registration Singleton<TService>(Func<IContainer, TService> factory)
-        where TService : class
-    {
-        return new Registration(typeof(TService), factory, ServiceLifetime.Singleton);
-    }
 }
