@@ -13,6 +13,4 @@ public interface IContainer
         where TImplementation : class;
     
     public TType Resolve<TType>() where TType : class;
-    
-    public object Resolve(Type type);
 }

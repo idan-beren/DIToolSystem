@@ -5,41 +5,35 @@ namespace DIToolSystem.DICustomContainer;
 public class Container : IContainer
 {
     private readonly ConcurrentDictionary<Type, Registration> _registrations = new();
-    private readonly ConcurrentDictionary<Type, byte> _resolutions = [];
+    private readonly ConcurrentDictionary<Type, Type> _resolutions = new();
 
-    public IContainer Register<TInterface, TImplementation>(ServiceLifetime lifetime = ServiceLifetime.Transient) 
+    public IContainer Register<TInterface, TImplementation>(ServiceLifetime lifetime = ServiceLifetime.Transient)
         where TInterface : class where TImplementation : class, TInterface
     {
-        var registration = new Registration(typeof(TInterface), typeof(TImplementation), lifetime);
-        _registrations[typeof(TInterface)] = registration;
+        _registrations[typeof(TInterface)] = new Registration(typeof(TInterface), typeof(TImplementation), lifetime);
         return this;
     }
 
-    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory, ServiceLifetime lifetime = ServiceLifetime.Transient) 
+    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory, ServiceLifetime lifetime = ServiceLifetime.Transient)
         where TInterface : class
     {
-        var registration = new Registration(typeof(TInterface), factory, lifetime);
-        _registrations[typeof(TInterface)] = registration;
+        _registrations[typeof(TInterface)] = new Registration(typeof(TInterface), factory, lifetime);
         return this;
     }
 
-    public IContainer Register<TImplementation>(ServiceLifetime lifetime = ServiceLifetime.Transient) 
+    public IContainer Register<TImplementation>(ServiceLifetime lifetime = ServiceLifetime.Transient)
         where TImplementation : class
     {
-        var registration = new Registration(typeof(TImplementation), typeof(TImplementation), lifetime);
-        _registrations[typeof(TImplementation)] = registration;
+        _registrations[typeof(TImplementation)] = 
+            new Registration(typeof(TImplementation), typeof(TImplementation), lifetime);
         return this;
     }
 
-    public TType Resolve<TType>() where TType : class
-    {
-        return (TType)Resolve(typeof(TType));
-    }
+    public TType Resolve<TType>() where TType : class => (TType)Resolve(typeof(TType));
 
     public object Resolve(Type type)
     {
-        const byte dummyValue = 0;
-        if (!_resolutions.TryAdd(type, dummyValue))
+        if (!_resolutions.TryAdd(type, type))
             throw new InvalidOperationException($"Circular dependency detected for {type}");
 
         try
@@ -84,11 +78,11 @@ public class Container : IContainer
         throw new InvalidOperationException("Invalid registration: no factory or implementation type.");
     }
     
-    private object CreateInstance(Type implementationType)
+    private object CreateInstance(Type type)
     {
-        var constructor = implementationType.GetConstructors().OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
+        var constructor = type.GetConstructors().OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
         if (constructor is null)
-            throw new InvalidOperationException($"No public constructors found for {implementationType}");
+            throw new InvalidOperationException($"No public constructors found for {type}");
 
         var parameters = constructor.GetParameters();
         var parameterInstances = new object[parameters.Length];
