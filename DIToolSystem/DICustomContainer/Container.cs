@@ -34,6 +34,10 @@ public class Container : IContainer
 
     public object Resolve(Type type)
     {
+        // Handle Lazy<T> resolution
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Lazy<>))
+            return ResolveLazy(type);
+
         // Track resolutions
         if (!_resolutions.TryAdd(type, type))
             throw new InvalidOperationException($"Circular dependency detected for {type}");
@@ -54,6 +58,24 @@ public class Container : IContainer
             // Remove from resolution tracking once resolved
             _resolutions.TryRemove(type, out _);
         }
+    }
+
+    private object ResolveLazy(Type type)
+    {
+        var innerType = type.GetGenericArguments().FirstOrDefault()
+                        ?? throw new InvalidOperationException($"Lazy type {type} must have a generic argument.");
+
+        var lazyConstructor = type.GetConstructor([typeof(Func<>).MakeGenericType(innerType)])
+                              ?? throw new InvalidOperationException($"No suitable constructor found for {type}.");
+
+        var resolveGeneric = GetType()
+            .GetMethod(nameof(Resolve), Type.EmptyTypes)!
+            .GetGenericMethodDefinition()
+            .MakeGenericMethod(innerType);
+        var factoryType = typeof(Func<>).MakeGenericType(innerType);
+        var factory = Delegate.CreateDelegate(factoryType, this, resolveGeneric);
+
+        return lazyConstructor.Invoke([factory]);
     }
 
     private object ResolveInstance(Registration registration) =>
