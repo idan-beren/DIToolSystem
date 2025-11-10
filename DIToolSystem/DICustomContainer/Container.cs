@@ -30,7 +30,7 @@ public class Container : IContainer
         return this;
     }
 
-    public TType Resolve<TType>() where TType : class => (TType)Resolve(typeof(TType));
+    public T Resolve<T>() where T : class => (T)Resolve(typeof(T));
 
     public object Resolve(Type type)
     {

@@ -12,5 +12,5 @@ public interface IContainer
     public IContainer Register<TImplementation>(ServiceLifetime lifetime)
         where TImplementation : class;
     
-    public TType Resolve<TType>() where TType : class;
+    public T Resolve<T>() where T : class;
 }
