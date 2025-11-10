@@ -14,7 +14,8 @@ public class Container : IContainer
         return this;
     }
 
-    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory, ServiceLifetime lifetime = ServiceLifetime.Transient)
+    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory,
+        ServiceLifetime lifetime = ServiceLifetime.Transient)
         where TInterface : class
     {
         _registrations[typeof(TInterface)] = new Registration(typeof(TInterface), factory, lifetime);
@@ -24,7 +25,7 @@ public class Container : IContainer
     public IContainer Register<TImplementation>(ServiceLifetime lifetime = ServiceLifetime.Transient)
         where TImplementation : class
     {
-        _registrations[typeof(TImplementation)] = 
+        _registrations[typeof(TImplementation)] =
             new Registration(typeof(TImplementation), typeof(TImplementation), lifetime);
         return this;
     }
@@ -33,63 +34,49 @@ public class Container : IContainer
 
     public object Resolve(Type type)
     {
+        // Track resolutions
         if (!_resolutions.TryAdd(type, type))
             throw new InvalidOperationException($"Circular dependency detected for {type}");
 
         try
         {
+            // If the type is registered, resolve it according to its registration
             if (_registrations.TryGetValue(type, out var registration))
                 return ResolveInstance(registration);
 
-            if (type is { IsInterface: false, IsAbstract: false })
-                return CreateInstance(type);
-
-            throw new InvalidOperationException($"Cannot resolve unregistered type: {type}");
+            // If not registered, attempt to initialize the type directly if it's concrete
+            return type is { IsInterface: true } or { IsAbstract: true }
+                ? throw new InvalidOperationException($"Cannot resolve unregistered type: {type}")
+                : InitializeInstance(type);
         }
         finally
         {
+            // Remove from resolution tracking once resolved
             _resolutions.TryRemove(type, out _);
         }
     }
-    
-    private object ResolveInstance(Registration registration)
+
+    private object ResolveInstance(Registration registration) =>
+        registration.Lifetime switch
+        {
+            ServiceLifetime.Singleton => registration.Instance ??= InitializeInstance(registration),
+            _ => InitializeInstance(registration)
+        };
+
+    private object InitializeInstance(Registration registration) =>
+        registration switch
+        {
+            { Factory: not null } => registration.Factory(this),
+            { ImplementationType: not null } => InitializeInstance(registration.ImplementationType),
+            _ => throw new InvalidOperationException("Invalid registration: no factory or implementation type.")
+        };
+
+    private object InitializeInstance(Type type)
     {
-        if (registration.Lifetime == ServiceLifetime.Singleton)
-            if (registration.Instance is not null)
-                return registration.Instance;
-            else
-            {
-                var instance = CreateInstance(registration);
-                registration.Instance = instance;
-                return instance;
-            }
-        
-        return CreateInstance(registration);
-    }
-    
-    private object CreateInstance(Registration registration)
-    {
-        if (registration.Factory is not null)
-            return registration.Factory(this);
+        var constructor = type.GetConstructors().OrderByDescending(c => c.GetParameters().Length).FirstOrDefault()
+                          ?? throw new InvalidOperationException($"No public constructors found for {type}");
 
-        if (registration.ImplementationType is not null)
-            return CreateInstance(registration.ImplementationType);
-
-        throw new InvalidOperationException("Invalid registration: no factory or implementation type.");
-    }
-    
-    private object CreateInstance(Type type)
-    {
-        var constructor = type.GetConstructors().OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
-        if (constructor is null)
-            throw new InvalidOperationException($"No public constructors found for {type}");
-
-        var parameters = constructor.GetParameters();
-        var parameterInstances = new object[parameters.Length];
-
-        for (var i = 0; i < parameters.Length; i++)
-            parameterInstances[i] = Resolve(parameters[i].ParameterType);
-
+        var parameterInstances = constructor.GetParameters().Select(p => Resolve(p.ParameterType)).ToArray();
         return constructor.Invoke(parameterInstances);
     }
 }
