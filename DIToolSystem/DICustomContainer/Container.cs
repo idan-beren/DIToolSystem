@@ -31,10 +31,12 @@ public class Container : IContainer
     }
 
     public T Resolve<T>() where T : class => (T)Resolve(typeof(T));
+    
+    public Task<T> ResolveAsync<T>() where T : class => Task.FromResult(Resolve<T>());
 
-    public object Resolve(Type type)
+    private object Resolve(Type type)
     {
-        // Handle Lazy<T> resolution
+        // Handle lazy resolution
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Lazy<>))
             return ResolveLazy(type);
 

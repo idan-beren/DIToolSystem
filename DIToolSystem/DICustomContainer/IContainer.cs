@@ -13,4 +13,6 @@ public interface IContainer
         where TImplementation : class;
     
     public T Resolve<T>() where T : class;
+
+    public Task<T> ResolveAsync<T>() where T : class;
 }
