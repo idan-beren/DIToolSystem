@@ -2,16 +2,18 @@ namespace DIToolSystem.DICustomContainer;
 
 public interface IContainer
 {
-    public IContainer Register<TInterface, TImplementation>(ServiceLifetime lifetime)
-        where TInterface : class 
+    public IContainer Register<TInterface, TImplementation>()
+        where TInterface : class
         where TImplementation : class, TInterface;
-    
-    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory, ServiceLifetime lifetime) 
+
+    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory)
         where TInterface : class;
-    
-    public IContainer Register<TImplementation>(ServiceLifetime lifetime)
+
+    public IContainer RegisterType<TImplementation>()
         where TImplementation : class;
-    
+
+    public IContainer SingleInstance();
+
     public T Resolve<T>() where T : class;
 
     public Task<T> ResolveAsync<T>() where T : class;

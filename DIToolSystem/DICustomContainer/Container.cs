@@ -7,31 +7,45 @@ public class Container : IContainer
     private readonly ConcurrentDictionary<Type, Registration> _registrations = new();
     private readonly ConcurrentDictionary<Type, Type> _resolutions = new();
 
-    public IContainer Register<TInterface, TImplementation>(ServiceLifetime lifetime = ServiceLifetime.Transient)
+    public IContainer Register<TInterface, TImplementation>()
         where TInterface : class where TImplementation : class, TInterface
     {
-        _registrations[typeof(TInterface)] = new Registration(typeof(TInterface), typeof(TImplementation), lifetime);
+        var registration = new Registration(typeof(TInterface), typeof(TImplementation));
+        registration.Lifetime = ServiceLifetime.Transient;
+        _registrations[typeof(TInterface)] = registration;
         return this;
     }
 
-    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory,
-        ServiceLifetime lifetime = ServiceLifetime.Transient)
+    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory)
         where TInterface : class
     {
-        _registrations[typeof(TInterface)] = new Registration(typeof(TInterface), factory, lifetime);
+        var registration = new Registration(typeof(TInterface), factory);
+        registration.Lifetime = ServiceLifetime.Transient;
+        _registrations[typeof(TInterface)] = registration;
         return this;
     }
 
-    public IContainer Register<TImplementation>(ServiceLifetime lifetime = ServiceLifetime.Transient)
+    public IContainer RegisterType<TImplementation>()
         where TImplementation : class
     {
-        _registrations[typeof(TImplementation)] =
-            new Registration(typeof(TImplementation), typeof(TImplementation), lifetime);
+        var registration = new Registration(typeof(TImplementation), typeof(TImplementation));
+        registration.Lifetime = ServiceLifetime.Transient;
+        _registrations[typeof(TImplementation)] = registration;
+        return this;
+    }
+
+    public IContainer SingleInstance()
+    {
+        if (_registrations.IsEmpty)
+            throw new InvalidOperationException("No registration available to set as singleton.");
+
+        var lastRegistration = _registrations.Values.Last();
+        lastRegistration.Lifetime = ServiceLifetime.Singleton;
         return this;
     }
 
     public T Resolve<T>() where T : class => (T)Resolve(typeof(T));
-    
+
     public Task<T> ResolveAsync<T>() where T : class => Task.FromResult(Resolve<T>());
 
     private object Resolve(Type type)
@@ -83,7 +97,7 @@ public class Container : IContainer
     private object ResolveInstance(Registration registration) =>
         registration.Lifetime switch
         {
-            ServiceLifetime.Singleton => registration.Instance ??= InitializeInstance(registration),
+            ServiceLifetime.Singleton => registration.SingleInstance ??= InitializeInstance(registration),
             _ => InitializeInstance(registration)
         };
 
