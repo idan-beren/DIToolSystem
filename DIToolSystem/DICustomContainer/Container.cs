@@ -70,10 +70,9 @@ public class Container : IContainer
     public TService ResolveNamed<TService>(string name) where TService : class =>
         (TService)Resolve(new RegistrationIndexer(typeof(TService)) { Name = name });
 
-    public IEnumerable<TService> ResolveAll<TService>() where TService : class
-    {
-        throw new NotImplementedException();
-    }
+    public IEnumerable<TService> ResolveAll<TService>() where TService : class =>
+        _registrations.Keys.Where(k => k.ServiceType == typeof(TService)).Select(k =>
+            (TService)Resolve(k));
 
     public Task<TService> ResolveAsync<TService>() where TService : class => Task.FromResult(Resolve<TService>());
 
