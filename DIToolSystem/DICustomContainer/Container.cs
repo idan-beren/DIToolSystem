@@ -83,14 +83,13 @@ public class Container : IContainer
 
     private RegistrationInfo? GetRegistrationInfo(RegistrationIndexer registrationIndexer)
     {
-        var registrationInfos = (from registration in _registrations
-            where registration.Key.CompareTo(registrationIndexer) == 0
-            select registration.Value).ToList();
+        var matches =
+            _registrations.Where(kvp => kvp.Key.CompareTo(registrationIndexer) == 0).Select(kvp => kvp.Value).ToList();
 
-        return registrationInfos.Count switch
+        return matches.Count switch
         {
             0 => null,
-            1 => registrationInfos[0],
+            1 => matches[0],
             _ => throw new InvalidOperationException(
                 $"Multiple registrations found for type {registrationIndexer.ServiceType}.")
         };
@@ -109,8 +108,7 @@ public class Container : IContainer
         try
         {
             // If the type is registered, resolve it according to its registration
-            var registrationIndexer = new RegistrationIndexer(type);
-            var registration = GetRegistrationInfo(registrationIndexer);
+            var registration = GetRegistrationInfo(new RegistrationIndexer(type));
             if (registration != null)
                 return ResolveInstance(registration);
             
