@@ -4,69 +4,68 @@ namespace DIToolSystem.DICustomContainer;
 
 public class Container : IContainer
 {
-    private Registration? _lastRegistration;
-    private readonly ConcurrentDictionary<Type, Registration> _registrations = new();
+    private KeyValuePair<RegistrationIndexer, RegistrationInfo> _lastRegistration;
+    private readonly ConcurrentDictionary<RegistrationIndexer, RegistrationInfo> _registrations = new();
     private readonly ConcurrentDictionary<Type, Type> _resolutions = new();
 
     public IContainer Register<TImplementation, TInterface>()
         where TInterface : class where TImplementation : class, TInterface
     {
-        var registration = new Registration(typeof(TImplementation), typeof(TInterface));
-        registration.Lifetime = ServiceLifetime.Transient;
-        _lastRegistration = registration;
-        //
-        _registrations[typeof(TInterface)] = registration;
-        //
+        var registrationInfo = new RegistrationInfo(typeof(TImplementation), typeof(TInterface));
+        var registrationIndexer = new RegistrationIndexer(typeof(TInterface));
+        AddRegistration(registrationInfo, registrationIndexer);
         return this;
     }
 
     public IContainer Register<TService>(Func<IContainer, TService> factory)
         where TService : class
     {
-        var registration = new Registration(typeof(TService), factory);
-        registration.Lifetime = ServiceLifetime.Transient;
-        _lastRegistration = registration;
-        //
-        _registrations[typeof(TService)] = registration;
-        //
+        var registrationInfo = new RegistrationInfo(typeof(TService), factory);
+        var registrationIndexer = new RegistrationIndexer(typeof(TService));
+        AddRegistration(registrationInfo, registrationIndexer);
         return this;
     }
 
     public IContainer Register<TImplementation>()
         where TImplementation : class
     {
-        var registration = new Registration(typeof(TImplementation), typeof(TImplementation));
-        registration.Lifetime = ServiceLifetime.Transient;
-        _lastRegistration = registration;
-        //
-        _registrations[typeof(TImplementation)] = registration;
-        //
+        var registrationInfo = new RegistrationInfo(typeof(TImplementation), typeof(TImplementation));
+        var registrationIndexer = new RegistrationIndexer(typeof(TImplementation));
+        AddRegistration(registrationInfo, registrationIndexer);
         return this;
+    }
+    
+    private void AddRegistration(RegistrationInfo registrationInfo,
+        RegistrationIndexer registrationIndexer)
+    {
+        registrationInfo.Lifetime = ServiceLifetime.Transient;
+        _registrations[registrationIndexer] = registrationInfo;
+        _lastRegistration = 
+            new KeyValuePair<RegistrationIndexer, RegistrationInfo>(registrationIndexer, registrationInfo);
     }
 
     public IContainer SingleInstance()
     {
-        if (_lastRegistration == null)
-            throw new InvalidOperationException("No registration found to set as single instance.");
+        if (_lastRegistration.Value == null)
+            throw new InvalidOperationException("No registration available to set as single instance.");
         
-        _lastRegistration.Lifetime = ServiceLifetime.Singleton;
+        _lastRegistration.Value.Lifetime = _lastRegistration.Value.Lifetime;
         return this;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    public IContainer Named(string name)
+    {
+        if (_lastRegistration.Value == null)
+            throw new InvalidOperationException("No registration available to name.");
+
+        _registrations.TryRemove(_lastRegistration);
+        var newIndexer = new RegistrationIndexer(_lastRegistration.Key.ServiceType) { Name = name };
+        _registrations[newIndexer] = _lastRegistration.Value;
+        _lastRegistration =
+            new KeyValuePair<RegistrationIndexer, RegistrationInfo>(newIndexer, _lastRegistration.Value);
+
+        return this;
+    }
     
     public T Resolve<T>() where T : class => (T)Resolve(typeof(T));
 
@@ -118,18 +117,18 @@ public class Container : IContainer
         return lazyConstructor.Invoke([factory]);
     }
 
-    private object ResolveInstance(Registration registration) =>
-        registration.Lifetime switch
+    private object ResolveInstance(RegistrationInfo registrationInfo) =>
+        registrationInfo.Lifetime switch
         {
-            ServiceLifetime.Singleton => registration.SingleInstance ??= InitializeInstance(registration),
-            _ => InitializeInstance(registration)
+            ServiceLifetime.Singleton => registrationInfo.SingleInstance ??= InitializeInstance(registrationInfo),
+            _ => InitializeInstance(registrationInfo)
         };
 
-    private object InitializeInstance(Registration registration) =>
-        registration switch
+    private object InitializeInstance(RegistrationInfo registrationInfo) =>
+        registrationInfo switch
         {
-            { Factory: not null } => registration.Factory(this),
-            { ImplementationType: not null } => InitializeInstance(registration.ImplementationType),
+            { Factory: not null } => registrationInfo.Factory(this),
+            { ImplementationType: not null } => InitializeInstance(registrationInfo.ImplementationType),
             _ => throw new InvalidOperationException("Invalid registration: no factory or implementation type.")
         };
 

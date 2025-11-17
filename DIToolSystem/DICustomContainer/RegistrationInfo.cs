@@ -1,6 +1,6 @@
 namespace DIToolSystem.DICustomContainer;
 
-public class Registration
+public class RegistrationInfo
 {
     public Type ServiceType { get; }
     
@@ -12,7 +12,7 @@ public class Registration
     
     public object? SingleInstance { get; set;  }
     
-    public Registration(Type implementationType, Type interfaceType)
+    public RegistrationInfo(Type implementationType, Type interfaceType)
     {
         ServiceType = interfaceType;
         ImplementationType = implementationType;
@@ -21,7 +21,7 @@ public class Registration
         SingleInstance = null;
     }
     
-    public Registration(Type serviceType, Func<IContainer, object> factory)
+    public RegistrationInfo(Type serviceType, Func<IContainer, object> factory)
     {
         ServiceType = serviceType;
         ImplementationType = null;

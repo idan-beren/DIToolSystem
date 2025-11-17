@@ -13,6 +13,8 @@ public interface IContainer
         where TService : class;
 
     public IContainer SingleInstance();
+    
+    public IContainer Named ( string name );
 
     public T Resolve<T>() where T : class;
 
