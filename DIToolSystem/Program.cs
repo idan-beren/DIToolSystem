@@ -18,7 +18,6 @@ public class ToolRunner(IContainer container)
         var allTools = container.ResolveAll<ITool>();
         foreach (var tool in allTools)
             tool.Execute();
-        
     }
 }
 

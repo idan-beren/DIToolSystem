@@ -8,15 +8,15 @@ public class Container : IContainer
     private readonly ConcurrentDictionary<RegistrationIndexer, RegistrationInfo> _registrations = new();
     private readonly ConcurrentDictionary<Type, Type> _resolutions = new();
 
-    public IContainer Register<TImplementation, TInterface>()
-        where TInterface : class where TImplementation : class, TInterface
+    public IContainer RegisterType<TImplementation>()
+        where TImplementation : class
     {
-        var registrationInfo = new RegistrationInfo(typeof(TImplementation), typeof(TInterface));
-        var registrationIndexer = new RegistrationIndexer(typeof(TInterface));
+        var registrationInfo = new RegistrationInfo(typeof(TImplementation), typeof(TImplementation));
+        var registrationIndexer = new RegistrationIndexer(typeof(TImplementation));
         AddRegistration(registrationInfo, registrationIndexer);
         return this;
     }
-
+    
     public IContainer Register<TService>(Func<IContainer, TService> factory)
         where TService : class
     {
@@ -25,12 +25,12 @@ public class Container : IContainer
         AddRegistration(registrationInfo, registrationIndexer);
         return this;
     }
-
-    public IContainer Register<TImplementation>()
-        where TImplementation : class
+    
+    public IContainer Register<TImplementation, TInterface>()
+        where TInterface : class where TImplementation : class, TInterface
     {
-        var registrationInfo = new RegistrationInfo(typeof(TImplementation), typeof(TImplementation));
-        var registrationIndexer = new RegistrationIndexer(typeof(TImplementation));
+        var registrationInfo = new RegistrationInfo(typeof(TImplementation), typeof(TInterface));
+        var registrationIndexer = new RegistrationIndexer(typeof(TInterface));
         AddRegistration(registrationInfo, registrationIndexer);
         return this;
     }

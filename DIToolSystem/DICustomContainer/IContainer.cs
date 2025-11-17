@@ -2,7 +2,7 @@ namespace DIToolSystem.DICustomContainer;
 
 public interface IContainer
 {
-    public IContainer Register<TImplementation>()
+    public IContainer RegisterType<TImplementation>()
         where TImplementation : class;
     
     public IContainer Register<TImplementation, TInterface>()
