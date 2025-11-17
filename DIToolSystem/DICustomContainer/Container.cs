@@ -34,12 +34,12 @@ public class Container : IContainer
         AddRegistration(registrationInfo, registrationIndexer);
         return this;
     }
-    
+
     private void AddRegistration(RegistrationInfo registrationInfo, RegistrationIndexer registrationIndexer)
     {
         registrationInfo.Lifetime = ServiceLifetime.Transient;
         _registrations[registrationIndexer] = registrationInfo;
-        _lastRegistration = 
+        _lastRegistration =
             new KeyValuePair<RegistrationIndexer, RegistrationInfo>(registrationIndexer, registrationInfo);
     }
 
@@ -64,15 +64,11 @@ public class Container : IContainer
         return this;
     }
 
-    public TService Resolve<TService>() where TService : class
-    {
-        return (TService)Resolve(typeof(TService));
-    }
+    public TService Resolve<TService>() where TService : class =>
+        (TService)Resolve(new RegistrationIndexer(typeof(TService)));
 
-    public TService ResolveNamed<TService>(string name) where TService : class
-    {
-        throw new NotImplementedException();
-    }
+    public TService ResolveNamed<TService>(string name) where TService : class =>
+        (TService)Resolve(new RegistrationIndexer(typeof(TService)) { Name = name });
 
     public IEnumerable<TService> ResolveAll<TService>() where TService : class
     {
@@ -95,8 +91,10 @@ public class Container : IContainer
         };
     }
 
-    private object Resolve(Type type)
+    private object Resolve(RegistrationIndexer indexer)
     {
+        var type = indexer.ServiceType;
+
         // Handle lazy resolution
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Lazy<>))
             return ResolveLazy(type);
@@ -108,10 +106,10 @@ public class Container : IContainer
         try
         {
             // If the type is registered, resolve it according to its registration
-            var registration = GetRegistrationInfo(new RegistrationIndexer(type));
+            var registration = GetRegistrationInfo(indexer);
             if (registration != null)
                 return ResolveInstance(registration);
-            
+
             // If not registered, attempt to initialize the type directly if it's concrete
             return type is { IsInterface: true } or { IsAbstract: true }
                 ? throw new InvalidOperationException($"Cannot resolve unregistered type: {type}")
@@ -162,7 +160,8 @@ public class Container : IContainer
         var constructor = type.GetConstructors().OrderByDescending(c => c.GetParameters().Length).FirstOrDefault()
                           ?? throw new InvalidOperationException($"No public constructors found for {type}");
 
-        var parameterInstances = constructor.GetParameters().Select(p => Resolve(p.ParameterType)).ToArray();
+        var parameterInstances = constructor.GetParameters()
+            .Select(p => Resolve(new RegistrationIndexer(p.ParameterType))).ToArray();
         return constructor.Invoke(parameterInstances);
     }
 }
