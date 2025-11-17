@@ -12,16 +12,13 @@ public class Registration
     
     public object? SingleInstance { get; set;  }
     
-    public string? Name { get; set; }
-
-    public Registration(Type serviceType, Type implementationType)
+    public Registration(Type implementationType, Type interfaceType)
     {
-        ServiceType = serviceType;
+        ServiceType = interfaceType;
         ImplementationType = implementationType;
         Factory = null;
         Lifetime = null;
         SingleInstance = null;
-        Name = null;
     }
     
     public Registration(Type serviceType, Func<IContainer, object> factory)
@@ -31,6 +28,5 @@ public class Registration
         Factory = factory;
         Lifetime = null;
         SingleInstance = null;
-        Name = null;
     }
 }

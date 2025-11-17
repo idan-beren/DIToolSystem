@@ -4,46 +4,70 @@ namespace DIToolSystem.DICustomContainer;
 
 public class Container : IContainer
 {
+    private Registration? _lastRegistration;
     private readonly ConcurrentDictionary<Type, Registration> _registrations = new();
     private readonly ConcurrentDictionary<Type, Type> _resolutions = new();
 
-    public IContainer Register<TInterface, TImplementation>()
+    public IContainer Register<TImplementation, TInterface>()
         where TInterface : class where TImplementation : class, TInterface
     {
-        var registration = new Registration(typeof(TInterface), typeof(TImplementation));
+        var registration = new Registration(typeof(TImplementation), typeof(TInterface));
         registration.Lifetime = ServiceLifetime.Transient;
+        _lastRegistration = registration;
+        //
         _registrations[typeof(TInterface)] = registration;
+        //
         return this;
     }
 
-    public IContainer Register<TInterface>(Func<IContainer, TInterface> factory)
-        where TInterface : class
+    public IContainer Register<TService>(Func<IContainer, TService> factory)
+        where TService : class
     {
-        var registration = new Registration(typeof(TInterface), factory);
+        var registration = new Registration(typeof(TService), factory);
         registration.Lifetime = ServiceLifetime.Transient;
-        _registrations[typeof(TInterface)] = registration;
+        _lastRegistration = registration;
+        //
+        _registrations[typeof(TService)] = registration;
+        //
         return this;
     }
 
-    public IContainer RegisterType<TImplementation>()
+    public IContainer Register<TImplementation>()
         where TImplementation : class
     {
         var registration = new Registration(typeof(TImplementation), typeof(TImplementation));
         registration.Lifetime = ServiceLifetime.Transient;
+        _lastRegistration = registration;
+        //
         _registrations[typeof(TImplementation)] = registration;
+        //
         return this;
     }
 
     public IContainer SingleInstance()
     {
-        if (_registrations.IsEmpty)
-            throw new InvalidOperationException("No registration available to set as singleton.");
-
-        var lastRegistration = _registrations.Values.Last();
-        lastRegistration.Lifetime = ServiceLifetime.Singleton;
+        if (_lastRegistration == null)
+            throw new InvalidOperationException("No registration found to set as single instance.");
+        
+        _lastRegistration.Lifetime = ServiceLifetime.Singleton;
         return this;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     public T Resolve<T>() where T : class => (T)Resolve(typeof(T));
 
     public Task<T> ResolveAsync<T>() where T : class => Task.FromResult(Resolve<T>());
