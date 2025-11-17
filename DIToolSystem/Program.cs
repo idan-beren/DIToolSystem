@@ -2,15 +2,33 @@
 using DIToolSystem.Tools;
 using DIToolSystem.Tools.Utils;
 
-var container = new Container();
-container.Register<MathTool, ITool>().Named("Math1");
-container.Register<MathTool, ITool>().Named("Math2");
-container.Register<MathTool, ITool>().Named("Math3");
-container.Register<ConsoleLogger, ILogger>().SingleInstance();
+namespace DIToolSystem;
 
-var t1 = container.ResolveNamed<ITool>("Math1");
-var all = container.ResolveAll<ITool>();
+public class ToolRunner(IContainer container)
+{
+    public void CreateAllTools()
+    {
+        container.Register<ConsoleLogger, ILogger>().SingleInstance();
+        container.Register<HelloWorldTool, ITool>().Named("HelloWorldTool");
+        container.Register<MathTool, ITool>().Named("MathTool");
+    }
 
-foreach (var tool in all)
-    tool.Execute();
-t1.Execute();
+    public void RunAllTools()
+    {
+        var allTools = container.ResolveAll<ITool>();
+        foreach (var tool in allTools)
+            tool.Execute();
+        
+    }
+}
+
+public static class Program
+{
+    private static void Main(string[] args)
+    {
+        var container = new Container();
+        var toolRunner = new ToolRunner(container);
+        toolRunner.CreateAllTools();
+        toolRunner.RunAllTools();
+    }
+}
