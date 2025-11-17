@@ -16,7 +16,11 @@ public interface IContainer
     
     public IContainer Named ( string name );
 
-    public T Resolve<T>() where T : class;
+    public TService Resolve<TService>() where TService : class;
+    
+    public TService ResolveNamed<TService>(string name) where TService : class;
+    
+    public IEnumerable<TService> ResolveAll<TService>() where TService : class;
 
-    public Task<T> ResolveAsync<T>() where T : class;
+    public Task<TService> ResolveAsync<TService>() where TService : class;
 }

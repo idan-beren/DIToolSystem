@@ -35,8 +35,7 @@ public class Container : IContainer
         return this;
     }
     
-    private void AddRegistration(RegistrationInfo registrationInfo,
-        RegistrationIndexer registrationIndexer)
+    private void AddRegistration(RegistrationInfo registrationInfo, RegistrationIndexer registrationIndexer)
     {
         registrationInfo.Lifetime = ServiceLifetime.Transient;
         _registrations[registrationIndexer] = registrationInfo;
@@ -48,8 +47,8 @@ public class Container : IContainer
     {
         if (_lastRegistration.Value == null)
             throw new InvalidOperationException("No registration available to set as single instance.");
-        
-        _lastRegistration.Value.Lifetime = _lastRegistration.Value.Lifetime;
+
+        _lastRegistration.Value.Lifetime = ServiceLifetime.Singleton;
         return this;
     }
 
@@ -59,17 +58,43 @@ public class Container : IContainer
             throw new InvalidOperationException("No registration available to name.");
 
         _registrations.TryRemove(_lastRegistration);
-        var newIndexer = new RegistrationIndexer(_lastRegistration.Key.ServiceType) { Name = name };
-        _registrations[newIndexer] = _lastRegistration.Value;
-        _lastRegistration =
-            new KeyValuePair<RegistrationIndexer, RegistrationInfo>(newIndexer, _lastRegistration.Value);
-
+        var indexer = new RegistrationIndexer(_lastRegistration.Key.ServiceType) { Name = name };
+        _registrations[indexer] = _lastRegistration.Value;
+        _lastRegistration = new KeyValuePair<RegistrationIndexer, RegistrationInfo>(indexer, _lastRegistration.Value);
         return this;
     }
-    
-    public T Resolve<T>() where T : class => (T)Resolve(typeof(T));
 
-    public Task<T> ResolveAsync<T>() where T : class => Task.FromResult(Resolve<T>());
+    public TService Resolve<TService>() where TService : class
+    {
+        return (TService)Resolve(typeof(TService));
+    }
+
+    public TService ResolveNamed<TService>(string name) where TService : class
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<TService> ResolveAll<TService>() where TService : class
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<TService> ResolveAsync<TService>() where TService : class => Task.FromResult(Resolve<TService>());
+
+    private RegistrationInfo? GetRegistrationInfo(RegistrationIndexer registrationIndexer)
+    {
+        var registrationInfos = (from registration in _registrations
+            where registration.Key.CompareTo(registrationIndexer) == 0
+            select registration.Value).ToList();
+
+        return registrationInfos.Count switch
+        {
+            0 => null,
+            1 => registrationInfos[0],
+            _ => throw new InvalidOperationException(
+                $"Multiple registrations found for type {registrationIndexer.ServiceType}.")
+        };
+    }
 
     private object Resolve(Type type)
     {
@@ -84,9 +109,11 @@ public class Container : IContainer
         try
         {
             // If the type is registered, resolve it according to its registration
-            if (_registrations.TryGetValue(type, out var registration))
+            var registrationIndexer = new RegistrationIndexer(type);
+            var registration = GetRegistrationInfo(registrationIndexer);
+            if (registration != null)
                 return ResolveInstance(registration);
-
+            
             // If not registered, attempt to initialize the type directly if it's concrete
             return type is { IsInterface: true } or { IsAbstract: true }
                 ? throw new InvalidOperationException($"Cannot resolve unregistered type: {type}")
