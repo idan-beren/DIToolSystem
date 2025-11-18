@@ -8,15 +8,32 @@ public class ToolRunner(IContainer container)
 {
     public void CreateAllTools()
     {
+        // Registering all tools to their interface via assembly registering
         container.RegisterAssembly<ITool>(typeof(ITool).Assembly);
-        container.RegisterAssembly<ILogger>(typeof(ILogger).Assembly).SingleInstance();
+        
+        // Registering logger to its interface as singleton
+        container.Register<ConsoleLogger, ILogger>().SingleInstance();
+        
+        // Registering logger named
+        container.RegisterType<ConsoleLogger>().Named("Logger");
     }
 
     public void RunAllTools()
     {
-        var allTools = container.ResolveAll<ITool>();
-        foreach (var tool in allTools)
+        // Resolving logger named
+        var logger = container.ResolveNamed<ConsoleLogger>("Logger");
+
+        logger.Log("Starting...");
+        
+        // Resolving all tools according to the interface
+        var tools = container.ResolveAll<ITool>();
+        foreach (var tool in tools)
+        {
+            logger.Log($"Executing {tool.Name}:");
             tool.Execute();
+        }
+        
+        logger.Log("All tools executed.");
     }
 }
 

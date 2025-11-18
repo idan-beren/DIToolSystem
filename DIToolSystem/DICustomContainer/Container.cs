@@ -82,18 +82,32 @@ public class Container : IContainer
         return this;
     }
 
-    public TService Resolve<TService>() 
-        where TService : class =>
-        (TService)Resolve(new RegistrationIndexer(typeof(TService)));
+    public TService Resolve<TService>()
+        where TService : class
+    {
+        var registrationIndexer = new RegistrationIndexer(typeof(TService));
+        var registrationInfo = GetRegistrationInfo(registrationIndexer);
+        return (TService)Resolve(registrationIndexer, registrationInfo);
+    }
+    
+    public TService ResolveNamed<TService>(string name)
+        where TService : class
+    {
+        var registrationIndexer = new RegistrationIndexer(typeof(TService)) { Name = name };
+        var registrationInfo = GetRegistrationInfo(registrationIndexer);
+        return (TService)Resolve(registrationIndexer, registrationInfo);
+    }
 
-    public TService ResolveNamed<TService>(string name) 
-        where TService : class =>
-        (TService)Resolve(new RegistrationIndexer(typeof(TService)) { Name = name });
+    public IEnumerable<TService> ResolveAll<TService>()
+        where TService : class
+    {
+        var serviceType = typeof(TService);
+        var infos =
+            _registrations.Where(kvp => kvp.Key.ServiceType == typeof(TService)).Select(kvp => kvp.Value).ToList();
 
-    public IEnumerable<TService> ResolveAll<TService>() 
-        where TService : class =>
-        _registrations.Keys.Where(k => k.ServiceType == typeof(TService)).Select(k =>
-            (TService)Resolve(k));
+        foreach (var info in infos)
+            yield return (TService)Resolve(new RegistrationIndexer(serviceType), info);
+    }
 
     public Task<TService> ResolveAsync<TService>() 
         where TService : class => 
@@ -113,7 +127,7 @@ public class Container : IContainer
         };
     }
 
-    private object Resolve(RegistrationIndexer indexer)
+    private object Resolve(RegistrationIndexer indexer, RegistrationInfo? info = null)
     {
         var type = indexer.ServiceType;
 
@@ -128,9 +142,8 @@ public class Container : IContainer
         try
         {
             // If the type is registered, resolve it according to its registration
-            var registration = GetRegistrationInfo(indexer);
-            if (registration != null)
-                return ResolveInstance(registration);
+            if (info != null)
+                return ResolveInstance(info);
 
             // If not registered, attempt to initialize the type directly if it's concrete
             return type is { IsInterface: true } or { IsAbstract: true }
@@ -183,7 +196,13 @@ public class Container : IContainer
                           ?? throw new InvalidOperationException($"No public constructors found for {type}");
 
         var parameterInstances = constructor.GetParameters()
-            .Select(p => Resolve(new RegistrationIndexer(p.ParameterType))).ToArray();
+            .Select(p =>
+            {
+                var registrationIndexer = new RegistrationIndexer(p.ParameterType);
+                var registrationInfo = GetRegistrationInfo(registrationIndexer);
+                return Resolve(registrationIndexer, registrationInfo);
+            })
+            .ToArray();
         return constructor.Invoke(parameterInstances);
     }
 }
