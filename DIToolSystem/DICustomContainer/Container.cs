@@ -75,7 +75,8 @@ public class Container : IContainer
             throw new InvalidOperationException("No registration available to name.");
 
         _registrations.TryRemove(_lastRegistration);
-        var indexer = new RegistrationIndexer(_lastRegistration.Key.ServiceType) { Name = name };
+        var indexer = (RegistrationIndexer)_lastRegistration.Key.Clone();
+        indexer.Name = name;
         _registrations[indexer] = _lastRegistration.Value;
         _lastRegistration = new KeyValuePair<RegistrationIndexer, RegistrationInfo>(indexer, _lastRegistration.Value);
         return this;

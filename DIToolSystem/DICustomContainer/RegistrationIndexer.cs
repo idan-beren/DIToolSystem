@@ -1,6 +1,6 @@
 namespace DIToolSystem.DICustomContainer;
 
-public class RegistrationIndexer(Type serviceType) : IComparable
+public class RegistrationIndexer(Type serviceType) : IComparable, ICloneable
 {
     public Type ServiceType { get; } = serviceType;
 
@@ -13,5 +13,10 @@ public class RegistrationIndexer(Type serviceType) : IComparable
         
         var result = string.Compare(ServiceType.FullName, o.ServiceType.FullName, StringComparison.Ordinal);
         return result != 0 ? result : string.Compare(Name, o.Name, StringComparison.Ordinal);
+    }
+
+    public object Clone()
+    {
+        return new RegistrationIndexer(ServiceType) { Name = Name };
     }
 }
