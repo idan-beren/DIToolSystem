@@ -87,6 +87,8 @@ public class Container : IContainer
     {
         var registrationIndexer = new RegistrationIndexer(typeof(TService));
         var registrationInfo = GetRegistrationInfo(registrationIndexer);
+        if (registrationInfo == null)
+            throw new InvalidOperationException($"No registration available to resolve {typeof(TService).Name}");
         return (TService)Resolve(registrationIndexer, registrationInfo);
     }
     
@@ -95,6 +97,8 @@ public class Container : IContainer
     {
         var registrationIndexer = new RegistrationIndexer(typeof(TService)) { Name = name };
         var registrationInfo = GetRegistrationInfo(registrationIndexer);
+        if (registrationInfo == null)
+            throw new InvalidOperationException($"No registration available to name. {name}");
         return (TService)Resolve(registrationIndexer, registrationInfo);
     }
 
