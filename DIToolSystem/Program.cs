@@ -8,9 +8,8 @@ public class ToolRunner(IContainer container)
 {
     public void CreateAllTools()
     {
-        container.Register<ConsoleLogger, ILogger>().SingleInstance();
-        container.Register<HelloWorldTool, ITool>().Named("HelloWorldTool");
-        container.Register<MathTool, ITool>().Named("MathTool");
+        container.RegisterAssembly<ITool>(typeof(ITool).Assembly);
+        container.RegisterAssembly<ILogger>(typeof(ILogger).Assembly).SingleInstance();
     }
 
     public void RunAllTools()

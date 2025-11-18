@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace DIToolSystem.DICustomContainer;
 
@@ -25,7 +26,23 @@ public class Container : IContainer
         AddRegistration(registrationInfo, registrationIndexer);
         return this;
     }
-    
+
+    public IContainer RegisterAssembly<TService>(Assembly assembly)
+        where TService : class
+    {
+        var type = typeof(TService);
+        var implementations = assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && type.IsAssignableFrom(t));
+
+        foreach (var implementation in implementations)
+        {
+            var registrationInfo = new RegistrationInfo(implementation, type); 
+            var registrationIndexer = new RegistrationIndexer(type); 
+            AddRegistration(registrationInfo, registrationIndexer);
+        }
+        return this;
+    }
+
     public IContainer Register<TImplementation, TInterface>()
         where TInterface : class where TImplementation : class, TInterface
     {
@@ -64,17 +81,22 @@ public class Container : IContainer
         return this;
     }
 
-    public TService Resolve<TService>() where TService : class =>
+    public TService Resolve<TService>() 
+        where TService : class =>
         (TService)Resolve(new RegistrationIndexer(typeof(TService)));
 
-    public TService ResolveNamed<TService>(string name) where TService : class =>
+    public TService ResolveNamed<TService>(string name) 
+        where TService : class =>
         (TService)Resolve(new RegistrationIndexer(typeof(TService)) { Name = name });
 
-    public IEnumerable<TService> ResolveAll<TService>() where TService : class =>
+    public IEnumerable<TService> ResolveAll<TService>() 
+        where TService : class =>
         _registrations.Keys.Where(k => k.ServiceType == typeof(TService)).Select(k =>
             (TService)Resolve(k));
 
-    public Task<TService> ResolveAsync<TService>() where TService : class => Task.FromResult(Resolve<TService>());
+    public Task<TService> ResolveAsync<TService>() 
+        where TService : class => 
+        Task.FromResult(Resolve<TService>());
 
     private RegistrationInfo? GetRegistrationInfo(RegistrationIndexer registrationIndexer)
     {
