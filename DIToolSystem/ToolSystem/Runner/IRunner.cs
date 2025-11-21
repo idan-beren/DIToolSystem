@@ -1,4 +1,4 @@
-namespace DIToolSystem.Tools.Runner;
+namespace DIToolSystem.ToolSystem.Runner;
 
 public interface IRunner
 {

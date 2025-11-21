@@ -1,6 +1,6 @@
 using DIToolSystem.Tools.Utils;
 
-namespace DIToolSystem.Tools;
+namespace DIToolSystem.ToolSystem.Tools;
 
 public class HelloWorldTool(ILogger logger) : ITool
 {

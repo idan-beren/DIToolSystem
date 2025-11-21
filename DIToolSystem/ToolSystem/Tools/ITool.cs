@@ -1,4 +1,4 @@
-namespace DIToolSystem.Tools;
+namespace DIToolSystem.ToolSystem.Tools;
 
 public interface ITool
 {

@@ -1,10 +1,10 @@
 using DIToolSystem.Tools.Utils;
 
-namespace DIToolSystem.Tools;
+namespace DIToolSystem.ToolSystem.Tools;
 
 public class MathTool(ILogger logger) : ITool
 {
-    public string Name => "MathTool";
+    public string Name => "Math";
 
     public void Execute()
     {

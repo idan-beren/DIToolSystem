@@ -1,4 +1,6 @@
-namespace DIToolSystem.Tools.Runner;
+using DIToolSystem.ToolSystem.Tools;
+
+namespace DIToolSystem.ToolSystem.Runner;
 
 public class ToolRunner : IRunner
 {
