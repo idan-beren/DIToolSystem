@@ -8,7 +8,9 @@ public class MathTool(ILogger logger) : ITool
 
     public void Execute()
     {
-        var result = new System.Data.DataTable().Compute("1*1", null);
-        logger.Log($"{result}");
+        logger.Log("Enter an expression:");
+        var expression = Console.ReadLine();
+        var result = new System.Data.DataTable().Compute(expression, null);
+        logger.Log($"Result: {result}");
     }
 }

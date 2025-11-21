@@ -1,11 +1,13 @@
+using DIToolSystem.Tools.Utils;
+
 namespace DIToolSystem.Tools;
 
-public class HelloWorldTool : ITool
+public class HelloWorldTool(ILogger logger) : ITool
 {
     public string Name => "HelloWorld";
     
     public void Execute()
     {
-        Console.WriteLine("Hello-World!");
+        logger.Log("Hello World!");
     }
 }

@@ -29,11 +29,6 @@ public class ContainerTests
         public Guid Id { get; } = Guid.NewGuid();
     }
 
-    public class ConcreteNoDeps
-    {
-        public int Value => 42;
-    }
-
     private interface IRequiresService
     {
         ITestService Dep { get; }
